@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Search</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Register and Login Buttons -->
+        <div class="auth-buttons">
+            <a href="/register" class="button">Register</a>
+            <a href="/login" class="button">Login</a>
+        </div>
+
+        <h1>Flight Search</h1>
+
+        <!-- Flight Search Form -->
+        <div class="search-form">
+            <h2>Search for Flights</h2>
+            <form id="search-form">
+                <label for="source_city">Source City:</label>
+                <input type="text" id="source_city" name="source_city">
+
+                <label for="destination_city">Destination City:</label>
+                <input type="text" id="destination_city" name="destination_city">
+
+                <label for="date">Date (YYYY-MM-DD):</label>
+                <input type="date" id="date" name="date">
+
+                <button type="submit">Search Flights</button>
+            </form>
+        </div>
+
+        <!-- Flight Status Form -->
+        <div class="status-form">
+            <h2>Check Flight Status</h2>
+            <form id="status-form">
+                <label for="flight_num">Flight Number:</label>
+                <input type="text" id="flight_num" name="flight_num">
+
+                <label for="status_date">Date (YYYY-MM-DD):</label>
+                <input type="date" id="status_date" name="status_date">
+
+                <button type="submit">Check Status</button>
+            </form>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results">
+            <h2>Results</h2>
+            <div id="flights-list"></div>
+            <div id="status-result"></div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // check if any fields are filled in the search form
+        function isSearchFormFilled() {
+            return $('#source_city').val() || $('#destination_city').val() || $('#date').val();
+        }
+
+        // check if any fields are filled in the status form
+        function isStatusFormFilled() {
+            return $('#flight_num').val() || $('#status_date').val();
+        }
+
+        $('#search-form').on('submit', function (e) {
+            e.preventDefault();
+
+            if (!isSearchFormFilled()) {
+                alert('Please enter at least one search criterion.');
+                return;
+            }
+
+            var source_city = $('#source_city').val();
+            var destination_city = $('#destination_city').val();
+            var date = $('#date').val();
+
+            var data = {};
+            if (source_city) data.source_city = source_city;
+            if (destination_city) data.destination_city = destination_city;
+            if (date) data.date = date;
+
+            $.ajax({
+                url: '/search_flights',
+                type: 'GET',
+                data: data,
+                success: function (response) {
+                    $('#flights-list').empty();
+                    if (response.message) {
+                        $('#flights-list').html('<p>' + response.message + '</p>');
+                    } else {
+                        response.forEach(function (flight) {
+                            $('#flights-list').append(`
+                                <div class="flight">
+                                    <p><strong>Flight ${flight.flight_num}</strong> by ${flight.airline_name}</p>
+                                    <p>Departure: ${flight.departure_airport} at ${flight.departure_time}</p>
+                                    <p>Arrival: ${flight.arrival_airport} at ${flight.arrival_time}</p>
+                                    <p>Status: ${flight.status}</p>
+                                    <p>Price: $${flight.price}</p>
+                                </div>
+                            `);
+                        });
+                    }
+                },
+                error: function (err) {
+                    $('#flights-list').html('<p>Error fetching flights.</p>');
+                }
+            });
+        });
+
+        // Handle flight status form submission
+        $('#status-form').on('submit', function (e) {
+            e.preventDefault();
+
+            if (!isStatusFormFilled()) {
+                alert('Please enter the flight number and date.');
+                return;
+            }
+
+            var flight_num = $('#flight_num').val();
+            var date = $('#status_date').val();
+
+            $.ajax({
+                url: '/flight_status',
+                type: 'GET',
+                data: {
+                    flight_num: flight_num,
+                    date: date
+                },
+                success: function (response) {
+                    $('#status-result').empty();
+                    if (response.message) {
+                        $('#status-result').html('<p>' + response.message + '</p>');
+                    } else {
+                        $('#status-result').html(`
+                            <div class="flight-status">
+                                <p><strong>Flight ${response.flight_num}</strong> by ${response.airline_name}</p>
+                                <p>Departure: ${response.departure_airport} at ${response.departure_time}</p>
+                                <p>Arrival: ${response.arrival_airport} at ${response.arrival_time}</p>
+                                <p>Status: ${response.status}</p>
+                                <p>Price: $${response.price}</p>
+                            </div>
+                        `);
+                    }
+                },
+                error: function (err) {
+                    $('#status-result').html('<p>You have to enter Flight Number and Date for flight status.</p>');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

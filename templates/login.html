@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+    <h1>Login</h1>
+    <form action="/login" method="POST">
+        <label for="username">Username (Email):</label>
+        <input type="email" id="username" name="username" required>
+        
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        
+        <label for="user_type">User Type:</label>
+        <select id="user_type" name="user_type" required>
+            <option value="customer">Customer</option>
+            <option value="booking_agent">Booking Agent</option>
+            <option value="airline_staff">Airline Staff</option>
+        </select>
+        
+        <button type="submit">Login</button>
+    </form>
+</body>
+</html>

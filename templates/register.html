@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Register as a User</h1>
+        
+        <!-- User Type Selection -->
+        <div class="user-type-selection">
+            <label for="user_type">Select User Type:</label>
+            <select id="user_type" onchange="displayForm()">
+                <option value="">Select...</option>
+                <option value="customer">Customer</option>
+                <option value="agent">Booking Agent</option>
+                <option value="staff">Airline Staff</option>
+            </select>
+        </div>
+
+        <!-- Customer Registration Form -->
+        <form id="customer-form" class="registration-form" action="/register_customer" method="POST" style="display:none">
+            <h2>Customer Registration</h2>
+            <label for="customer_name">Name:</label>
+            <input type="text" id="customer_name" name="customer_name" required>
+
+            <label for="customer_email">Email:</label>
+            <input type="email" id="customer_email" name="customer_email" required>
+
+            <label for="customer_password">Password:</label>
+            <input type="password" id="customer_password" name="customer_password" required>
+
+            <label for="customer_building_number">Building Number:</label>
+            <input type="text" id="customer_building_number" name="customer_building_number" required>
+
+            <label for="customer_street">Street:</label>
+            <input type="text" id="customer_street" name="customer_street" required>
+
+            <label for="customer_city">City:</label>
+            <input type="text" id="customer_city" name="customer_city" required>
+
+            <label for="customer_state">State:</label>
+            <input type="text" id="customer_state" name="customer_state" required>
+
+            <label for="customer_phone">Phone Number:</label>
+            <input type="tel" id="customer_phone" name="customer_phone" required>
+
+            <label for="customer_passport_number">Passport Number:</label>
+            <input type="text" id="customer_passport_number" name="customer_passport_number" required>
+
+            <label for="customer_passport_expiration">Passport Expiration Date:</label>
+            <input type="date" id="customer_passport_expiration" name="customer_passport_expiration" required>
+
+            <label for="customer_passport_country">Passport Country:</label>
+            <input type="text" id="customer_passport_country" name="customer_passport_country" required>
+
+            <label for="customer_dob">Date of Birth:</label>
+            <input type="date" id="customer_dob" name="customer_dob" required>
+
+            <button type="submit">Register as Customer</button>
+        </form>
+
+        <!-- Booking Agent Registration Form -->
+        <form id="agent-form" class="registration-form" action="/register_agent" method="POST" style="display:none">
+            <h2>Booking Agent Registration</h2>
+            <label for="agent_name">Name:</label>
+            <input type="text" id="agent_name" name="agent_name" required>
+
+            <label for="agent_email">Email:</label>
+            <input type="email" id="agent_email" name="agent_email" required>
+
+            <label for="agent_password">Password:</label>
+            <input type="password" id="agent_password" name="agent_password" required>
+
+            <label for="agent_code">Booking Agent ID:</label>
+            <input type="text" id="agent_code" name="agent_id" required>
+
+            <button type="submit">Register as Booking Agent</button>
+        </form>
+
+        <!-- Airline Staff Registration Form -->
+        <form id="staff-form" class="registration-form" action="/register_staff" method="POST" style="display:none">
+            <h2>Airline Staff Registration</h2>
+            <label for="staff_username">Username:</label>
+            <input type="text" id="staff_username" name="staff_username" required>
+
+            <label for="staff_password">Password:</label>
+            <input type="password" id="staff_password" name="staff_password" required>
+
+            <label for="staff_first_name">First Name:</label>
+            <input type="text" id="staff_first_name" name="staff_first_name" required>
+
+            <label for="staff_last_name">Last Name:</label>
+            <input type="text" id="staff_last_name" name="staff_last_name" required>
+
+            <label for="staff_dob">Date of Birth:</label>
+            <input type="date" id="staff_dob" name="staff_dob" required>
+
+            <label for="staff_airline">Airline Name:</label>
+            <input type="text" id="staff_airline" name="staff_airline" required>
+
+            <button type="submit">Register as Airline Staff</button>
+        </form>
+    </div>
+
+    <script>
+        // Function to display the relevant form based on selected user type
+        function displayForm() {
+            var userType = document.getElementById("user_type").value;
+
+            // Hide all forms initially
+            document.getElementById("customer-form").style.display = "none";
+            document.getElementById("agent-form").style.display = "none";
+            document.getElementById("staff-form").style.display = "none";
+
+            // Show the selected form
+            if (userType === "customer") {
+                document.getElementById("customer-form").style.display = "block";
+            } else if (userType === "agent") {
+                document.getElementById("agent-form").style.display = "block";
+            } else if (userType === "staff") {
+                document.getElementById("staff-form").style.display = "block";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Home</title>
+</head>
+<body>
+    <h1>Welcome to Customer Home, {{ session['username'] }}!</h1>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-danger">
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <h2>Upcoming Flights</h2>
+    {% if upcoming_flights %}
+      <table border="1">
+        <tr>
+          <th>Flight Number</th>
+          <th>Departure Airport</th>
+          <th>Arrival Airport</th>
+          <th>Departure Time</th>
+          <th>Arrival Time</th>
+        </tr>
+        {% for flight in upcoming_flights %}
+        <tr>
+          <td>{{ flight.flight_num }}</td>
+          <td>{{ flight.departure_airport }}</td>
+          <td>{{ flight.arrival_airport }}</td>
+          <td>{{ flight.departure_time }}</td>
+          <td>{{ flight.arrival_time }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <p>No upcoming flights.</p>
+    {% endif %}
+
+    <h2>Available Actions</h2>
+    <ul>
+        <li><a href="{{ url_for('logout') }}">Log Out</a></li>
+    </ul>
+</body>
+</html>

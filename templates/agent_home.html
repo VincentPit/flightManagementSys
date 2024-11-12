@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Agent Home</title>
+</head>
+<body>
+    <h1>Welcome, {{ username }}!</h1>
+
+    <!-- Display error messages if any -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <h2>Agent Actions</h2>
+    <ul>
+        <li><a href="{{ url_for('logout') }}">Log Out</a></li>
+    </ul>
+</body>
+</html>
