@@ -5,7 +5,7 @@
     <title>Booking Agent Home</title>
 </head>
 <body>
-    <h1>Welcome, {{ username }}!</h1>
+    <h1>Welcome to Agent Home, {{ session['username'] }}!</h1>
 
     <!-- Display error messages if any -->
     {% with messages = get_flashed_messages() %}
@@ -20,7 +20,18 @@
 
     <h2>Agent Actions</h2>
     <ul>
+
+        <li><a href="{{ url_for('view_commission') }}">View Commission</a></li>
+        
+        <li><a href="{{ url_for('view_top_customers') }}">view_top_customers</a></li>
+
+        <li><a href="{{ url_for('view_my_flights') }}">View My Flights</a></li>
+
+        <li><a href="{{ url_for('search_flights_agent') }}">Purchase Tickets</a></li>
+        
         <li><a href="{{ url_for('logout') }}">Log Out</a></li>
+
+
     </ul>
 </body>
 </html>

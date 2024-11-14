@@ -3,18 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
+    <script>
+        function updateInputField() {
+            const userType = document.getElementById('user_type').value;
+            const usernameLabel = document.getElementById('username_label');
+            const usernameInput = document.getElementById('username');
+
+            if (userType === 'airline_staff') {
+                usernameLabel.innerText = 'Username:';
+                usernameInput.type = 'text';  // For airline_staff, use plain text for username
+                usernameInput.placeholder = 'Enter your username';
+            } else {
+                usernameLabel.innerText = 'Email:';
+                usernameInput.type = 'email';  // For customer and booking_agent, use email input
+                usernameInput.placeholder = 'Enter your email address';
+            }
+        }
+    </script>
 </head>
 <body>
     <h1>Login</h1>
     <form action="/login" method="POST">
-        <label for="username">Username (Email):</label>
-        <input type="email" id="username" name="username" required>
+        <label for="username" id="username_label">Email:</label>
+        <input type="email" id="username" name="username" required placeholder="Enter your email address">
         
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required>
         
         <label for="user_type">User Type:</label>
-        <select id="user_type" name="user_type" required>
+        <select id="user_type" name="user_type" required onchange="updateInputField()">
             <option value="customer">Customer</option>
             <option value="booking_agent">Booking Agent</option>
             <option value="airline_staff">Airline Staff</option>
@@ -22,5 +39,10 @@
         
         <button type="submit">Login</button>
     </form>
+
+    <script>
+        // Initial call to set the correct input type when the page loads
+        updateInputField();
+    </script>
 </body>
 </html>

@@ -2,7 +2,7 @@ from flask import Flask, g, request, jsonify, render_template, redirect, url_for
 import mysql.connector
 from mysql.connector import Error
 import config
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 import logging
 
@@ -173,16 +173,17 @@ def register_customer():
         logging.debug("Customer details committed to the database.")
         
         flash('Customer registered successfully!')
+        return redirect(url_for('login'))  # Redirect after successful registration
     except Error as e:
         db.rollback()
 
         # Log the exception
         logging.error(f"An error occurred: {e}")
         flash(f"An error occurred: {e}")
+        return render_template('register.html', error_message=f"An error occurred: {e}")  # Stay on the same page with error message
     finally:
         cursor.close()
 
-    return redirect(url_for('login'))
 
 @app.route('/register_agent', methods=['POST'])
 def register_agent():
@@ -208,13 +209,13 @@ def register_agent():
         ))
         db.commit()
         flash('Booking Agent registered successfully!')
+        return redirect(url_for('login'))  # Redirect after successful registration
     except Error as e:
         db.rollback()
         flash(f"An error occurred: {e}")
+        return render_template('register.html', error_message=f"An error occurred: {e}")  # Stay on the same page with error message
     finally:
         cursor.close()
-
-    return redirect(url_for('login'))
 
 
 @app.route('/register_staff', methods=['POST'])
@@ -244,14 +245,14 @@ def register_staff():
         ))
         db.commit()
         flash('Airline Staff registered successfully!')
+        return redirect(url_for('login'))  # Redirect to login page after successful registration
     except Error as e:
         db.rollback()
+        logging.error(f"An error occurred while registering staff: {e}")
         flash(f"An error occurred: {e}")
+        return render_template('register.html', error_message=f"An error occurred: {e}")  # Stay on the same page with error message
     finally:
         cursor.close()
-
-    return redirect(url_for('login'))
-
 
 def check_login(username, password, user_type):
     # Hash the password with MD5
@@ -262,10 +263,17 @@ def check_login(username, password, user_type):
     cursor = db.cursor(dictionary=True)
     
     # Query to check if the user exists with the given username, password, and user type
-    query = """
-        SELECT * FROM {} 
-        WHERE email = %s AND password = %s
-    """.format(user_type)
+    if user_type == "airline_staff":
+        query = """
+            SELECT * FROM airline_staff
+            WHERE username = %s AND password = %s
+        """
+    else:
+        query = """
+            SELECT * FROM {} 
+            WHERE email = %s AND password = %s
+        """.format(user_type)
+    
     cursor.execute(query, (username, password_hash))
     
     user = cursor.fetchone()
@@ -369,20 +377,22 @@ def customer_home():
         # Example: Fetch upcoming flights for the customer
         db = get_db()
         cursor = db.cursor(dictionary=True)
-        
-        cursor.execute("""
-            SELECT f.flight_num, f.departure_airport, f.arrival_airport, f.departure_time, f.arrival_time
-            FROM flight f
-            JOIN ticket t ON f.airline_name = t.airline_name AND f.flight_num = t.flight_num
-            JOIN purchases p ON t.ticket_id = p.ticket_id
-            WHERE p.customer_email = %s AND f.departure_time > NOW()
-        """, (session['username'],))
-        upcoming_flights = cursor.fetchall()
+        customer_email = session.get('username')
+        query = """
+                SELECT f.airline_name, f.flight_num, f.departure_airport, f.departure_time, f.arrival_airport, f.arrival_time
+                FROM purchases p
+                JOIN ticket t ON p.ticket_id = t.ticket_id
+                JOIN flight f ON t.airline_name = f.airline_name AND t.flight_num = f.flight_num
+                WHERE p.customer_email = %s
+                ORDER BY f.departure_time
+            """
+        cursor.execute(query, (customer_email,))
+        flights = cursor.fetchall()
         
         cursor.close()
         
         # Render customer home page template with any flashed messages and upcoming flights
-        return render_template('customer_home.html', upcoming_flights=upcoming_flights)
+        return render_template('customer_home.html', upcoming_flights=flights)
     else:
         return redirect(url_for('login'))
 
@@ -462,6 +472,64 @@ def view_purchases():
 
     return redirect(url_for('login'))
 
+@app.route('/view_commission', methods=['GET', 'POST'])
+def view_commission():
+    if 'username' not in session:
+        flash("Please log in to view commission details.")
+        return redirect(url_for('login'))
+    
+    booking_agent_email = session['username']
+    
+    # Default date range: past 60 days
+    end_date = datetime.now().date()
+    start_date = end_date - timedelta(days=60)
+
+    if request.method == 'POST':
+        # Get custom date range from form if provided
+        start_date = request.form.get('start_date')
+        end_date = request.form.get('end_date')
+        if not start_date or not end_date:
+            flash("Please provide both start and end dates.")
+            return redirect(url_for('view_commission'))
+        
+        # Convert to date objects for query
+        start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        
+        # Query to calculate total commission, average commission per ticket, and total tickets sold
+        commission_query = """
+            SELECT 
+                SUM(f.price * 0.1) AS total_commission,
+                AVG(f.price * 0.1) AS avg_commission_per_ticket,
+                COUNT(p.ticket_id) AS total_tickets_sold
+            FROM purchases p
+            JOIN ticket t ON p.ticket_id = t.ticket_id
+            JOIN flight f ON t.airline_name = f.airline_name AND t.flight_num = f.flight_num
+            WHERE p.booking_agent_email = %s
+            AND p.purchase_date BETWEEN %s AND %s
+        """
+        cursor.execute(commission_query, (booking_agent_email, start_date, end_date))
+        commission_data = cursor.fetchone()
+        logging.debug("commission_data:", commission_data)
+        # Render the commission data
+        return render_template(
+            'view_commission.html',
+            commission_data=commission_data,
+            start_date=start_date,
+            end_date=end_date
+        )
+
+    except Error as e:
+        logging.error(f"An error occurred while fetching commission data: {e}")
+        flash(f"An error occurred: {e}")
+    finally:
+        cursor.close()
+
+    return render_template('view_commission.html')
 
 # Logout route to clear session
 @app.route('/logout')
@@ -476,6 +544,374 @@ def close_db(exception):
     db = g.pop('db', None)
     if db is not None:
         db.close()
+
+@app.route('/my_flights', methods=['GET'])
+def view_my_flights():
+    # Fetch logged-in user's email
+    agent_email = None
+    customer_email = None
+    user_type = session.get('user_type')
+    
+    
+    if user_type == "customer":
+        logging.debug("view flights customer")
+        customer_email = session.get('username')
+        
+        
+    if user_type == "booking_agent":
+        logging.debug("view flights booking_agent")
+        agent_email = session.get('username')
+    
+    #session.get('username')
+    
+    
+    if agent_email:
+        
+        try:
+            db = get_db()
+            cursor = db.cursor()
+
+            # Default: Show upcoming flights by joining `purchases`, `ticket`, and `flight` tables
+            query = """
+                SELECT f.airline_name, f.flight_num, f.departure_airport, f.departure_time, f.arrival_airport, f.arrival_time
+                FROM purchases p
+                JOIN ticket t ON p.ticket_id = t.ticket_id
+                JOIN flight f ON t.airline_name = f.airline_name AND t.flight_num = f.flight_num
+                WHERE p.booking_agent_email = %s
+                ORDER BY f.departure_time
+            """
+            cursor.execute(query, (agent_email,))
+            
+            
+            flights = cursor.fetchall()
+
+            # Check if no flights were found
+            logging.debug("Fetched FLights:", flights)
+            if not flights:
+                flash("Hi Agent, you have no upcoming flights.")
+            
+            return render_template('my_flights.html', flights=flights)
+        
+        except Error as e:
+            logging.error(f"An error occurred: {e}")
+            flash(f"An error occurred: {e}")
+            return redirect(url_for('home'))  # Redirect to home page or some other page
+        
+        finally:
+            cursor.close()
+            
+
+    if customer_email:
+        try:
+            db = get_db()
+            cursor = db.cursor()
+
+            # Default: Show upcoming flights by joining `purchases`, `ticket`, and `flight` tables
+            query = """
+                SELECT f.airline_name, f.flight_num, f.departure_airport, f.departure_time, f.arrival_airport, f.arrival_time
+                FROM purchases p
+                JOIN ticket t ON p.ticket_id = t.ticket_id
+                JOIN flight f ON t.airline_name = f.airline_name AND t.flight_num = f.flight_num
+                WHERE p.customer_email = %s
+                ORDER BY f.departure_time
+            """
+            cursor.execute(query, (customer_email,))
+            flights = cursor.fetchall()
+
+            # Check if no flights were found
+            if not flights:
+                flash("Dear Customer, you have no upcoming flights.")
+            
+            return render_template('my_flights.html', flights=flights)
+        
+        except Error as e:
+            logging.error(f"An error occurred: {e}")
+            flash(f"An error occurred: {e}")
+            return redirect(url_for('home'))  # Redirect to home page or some other page
+        
+        finally:
+            cursor.close()
+    else:
+        flash("Please log in to view your flights.")
+        return redirect(url_for('login'))
+
+
+@app.route('/search_flights_customer', methods=['GET', 'POST'])
+def search_flights_customer():
+    if request.method == 'POST':
+        source = request.form.get('source')
+        destination = request.form.get('destination')
+        date = request.form.get('date')
+
+        try:
+            db = get_db()
+            cursor = db.cursor()
+
+            query = """
+                SELECT * FROM flight
+                WHERE departure_airport LIKE %s AND arrival_airport LIKE %s
+                AND departure_time >= %s
+            """
+            cursor.execute(query, (f"%{source}%", f"%{destination}%", date))
+            available_flights = cursor.fetchall()
+            
+            logging.debug("found available_flights:", available_flights)
+            return render_template('search_flights.html', flights=available_flights)
+
+        except Error as e:
+            logging.error(f"An error occurred: {e}")
+            flash(f"An error occurred: {e}")
+        finally:
+            cursor.close()
+
+    return render_template('search_flights.html')
+
+
+@app.route('/purchase_ticket/<airline_name>/<int:flight_num>', methods=['GET'])
+def purchase_ticket(airline_name, flight_num):
+    customer_email = session.get('username')
+
+    if customer_email:
+        try:
+            db = get_db()
+            cursor = db.cursor()
+
+            # Insert the ticket into the ticket table to get ticket_id
+            ticket_query = """
+                INSERT INTO ticket (airline_name, flight_num)
+                VALUES (%s, %s)
+            """
+            cursor.execute(ticket_query, (airline_name, flight_num))
+            ticket_id = cursor.lastrowid  # Get the generated ticket_id
+            
+            # Insert the purchase into the purchases table
+            purchase_query = """
+                INSERT INTO purchases (ticket_id, customer_email, purchase_date)
+                VALUES (%s, %s, %s)
+            """
+            cursor.execute(purchase_query, (ticket_id, customer_email, datetime.now().date()))
+            db.commit()
+            
+            flash('Ticket purchased successfully!')
+            return redirect(url_for('view_my_flights'))
+
+        except Error as e:
+            logging.error(f"An error occurred: {e}")
+            flash(f"An error occurred: {e}")
+            db.rollback()  # Rollback in case of error
+        finally:
+            cursor.close()
+
+    flash("Please log in to purchase a ticket.")
+    return redirect(url_for('login'))
+
+@app.route('/search_flights_agent', methods=['GET', 'POST'])
+def search_flights_agent():
+    if 'username' not in session:
+        flash("Please log in to search for flights.")
+        return redirect(url_for('login'))
+
+    booking_agent_email = session['username']
+
+    if request.method == 'POST':
+        source = request.form.get('source')
+        destination = request.form.get('destination')
+        date = request.form.get('date')
+
+        try:
+            db = get_db()
+            cursor = db.cursor()
+
+            # Query to get the airline that the booking agent works for
+            agent_airline_query = """
+                SELECT airline FROM booking_agent
+                WHERE email = %s
+            """
+            cursor.execute(agent_airline_query, (booking_agent_email,))
+            agent_airline = cursor.fetchone()
+
+            if agent_airline:
+                airline_name = agent_airline[0]
+
+                # Query to search for flights based on source, destination, date, and airline
+                search_query = """
+                    SELECT * FROM flight
+                    WHERE airline_name = %s
+                    AND departure_airport LIKE %s
+                    AND arrival_airport LIKE %s
+                    AND DATE(departure_time) = %s
+                """
+                cursor.execute(search_query, (airline_name, f"%{source}%", f"%{destination}%", date))
+                available_flights = cursor.fetchall()
+                return render_template('search_flights_agent.html', flights=available_flights)
+
+            else:
+                flash("Booking agent airline information not found.")
+
+        except Error as e:
+            logging.error(f"An error occurred during flight search: {e}")
+            flash(f"An error occurred: {e}")
+        finally:
+            cursor.close()
+
+    return render_template('search_flights_agent.html')
+
+
+@app.route('/purchase_ticket_agent/<airline_name>/<int:flight_num>', methods=['GET', 'POST'])
+def purchase_ticket_agent(airline_name, flight_num):
+    if 'username' not in session:
+        flash("Please log in to purchase a ticket.")
+        return redirect(url_for('login'))
+
+    booking_agent_email = session.get('username')  # Booking agent's email
+
+    if request.method == 'POST':
+        customer_emails = request.form.getlist('customer_emails')  # Selected customer emails
+        num_tickets = int(request.form.get('num_tickets', 1))  # Number of tickets to purchase
+
+        try:
+            db = get_db()
+            cursor = db.cursor()
+
+            for _ in range(num_tickets):
+                # Insert the ticket for the flight
+                ticket_query = """
+                    INSERT INTO ticket (airline_name, flight_num)
+                    VALUES (%s, %s)
+                """
+                cursor.execute(ticket_query, (airline_name, flight_num))
+                ticket_id = cursor.lastrowid  # Get the generated ticket_id
+
+                # Insert the purchase record for each selected customer
+                for customer_email in customer_emails:
+                    purchase_query = """
+                        INSERT INTO purchases (ticket_id, customer_email, booking_agent_email, purchase_date)
+                        VALUES (%s, %s, %s, %s)
+                    """
+                    cursor.execute(purchase_query, (ticket_id, customer_email, booking_agent_email, datetime.now().date()))
+
+            db.commit()
+            flash(f'Tickets purchased successfully for {len(customer_emails)} customers!')
+            return redirect(url_for('view_my_flights'))
+
+        except Error as e:
+            logging.error(f"An error occurred: {e}")
+            flash(f"An error occurred: {e}")
+            db.rollback()
+        finally:
+            cursor.close()
+
+    # Retrieve list of customers for agent to select
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT email FROM customer")
+        customers = cursor.fetchall()
+    except Error as e:
+        logging.error(f"An error occurred while fetching customers: {e}")
+        flash(f"An error occurred: {e}")
+        customers = []
+    finally:
+        cursor.close()
+
+    return render_template('purchase_ticket_agent.html', airline_name=airline_name, flight_num=flight_num, customers=customers)
+
+@app.route('/track_spending', methods=['GET'])
+def track_spending():
+    customer_email = session.get('username')
+    
+    if customer_email:
+        try:
+            db = get_db()
+            cursor = db.cursor()
+
+            # Query to calculate the total money spent per month in the past year
+            query = """
+                SELECT SUM(f.price) AS total_spent, MONTH(f.departure_time) AS month
+                FROM purchases p
+                JOIN ticket t ON p.ticket_id = t.ticket_id
+                JOIN flight f ON t.airline_name = f.airline_name AND t.flight_num = f.flight_num
+                WHERE p.customer_email = %s AND f.departure_time >= CURDATE() - INTERVAL 1 YEAR
+                GROUP BY MONTH(f.departure_time)
+            """
+            cursor.execute(query, (customer_email,))
+            spending_data = cursor.fetchall()
+            logging.debug("Fetched spending_data: %s", spending_data)
+            
+            # Render the data for the chart
+            return render_template('track_spending.html', spending_data=spending_data)
+
+        except Error as e:
+            logging.error(f"An error occurred: {e}")
+            flash(f"An error occurred: {e}")
+        finally:
+            cursor.close()
+    else:
+        flash("Please log in to track your spending.")
+        return redirect(url_for('login'))
+
+@app.route('/view_top_customers', methods=['GET'])
+def view_top_customers():
+    if 'username' not in session:
+        flash("Please log in to view top customers.")
+        return redirect(url_for('login'))
+    
+    booking_agent_email = session['username']
+    
+    # Calculate date ranges
+    six_months_ago = datetime.now().date() - timedelta(days=180)
+    one_year_ago = datetime.now().date() - timedelta(days=365)
+
+    try:
+        db = get_db()
+        cursor = db.cursor()
+
+        # Query for top customers by tickets bought in the past 6 months
+        tickets_query = """
+            SELECT p.customer_email, COUNT(p.ticket_id) AS tickets_bought
+            FROM purchases p
+            JOIN ticket t ON p.ticket_id = t.ticket_id
+            WHERE p.booking_agent_email = %s
+            AND p.purchase_date >= %s
+            GROUP BY p.customer_email
+            ORDER BY tickets_bought DESC
+            LIMIT 5
+        """
+        cursor.execute(tickets_query, (booking_agent_email, six_months_ago))
+        top_customers_by_tickets = cursor.fetchall()
+
+        # Query for top customers by commission received in the last year
+        commission_query = """
+            SELECT p.customer_email, SUM(f.price * 0.1) AS total_commission
+            FROM purchases p
+            JOIN ticket t ON p.ticket_id = t.ticket_id
+            JOIN flight f ON t.airline_name = f.airline_name AND t.flight_num = f.flight_num
+            WHERE p.booking_agent_email = %s
+            AND p.purchase_date >= %s
+            GROUP BY p.customer_email
+            ORDER BY total_commission DESC
+            LIMIT 5
+        """
+        cursor.execute(commission_query, (booking_agent_email, one_year_ago))
+        top_customers_by_commission = cursor.fetchall()
+
+        # Render the results in the template
+        
+        logging.debug('top_customers_by_tickets', top_customers_by_tickets)
+        logging.debug("top_customers_by_commission", top_customers_by_commission)
+        return render_template(
+            'view_top_customers.html',
+            top_customers_by_tickets=top_customers_by_tickets,
+            top_customers_by_commission=top_customers_by_commission
+        )
+
+    except Error as e:
+        logging.error(f"An error occurred while fetching top customers: {e}")
+        flash(f"An error occurred: {e}")
+    finally:
+        cursor.close()
+
+    return render_template('view_top_customers.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

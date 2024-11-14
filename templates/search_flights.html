@@ -1,0 +1,47 @@
+<h1>Search for Flights</h1>
+<form method="POST">
+    <label for="source">Source:</label>
+    <input type="text" id="source" name="source" required><br><br>
+    
+    <label for="destination">Destination:</label>
+    <input type="text" id="destination" name="destination" required><br><br>
+    
+    <label for="date">Departure Date:</label>
+    <input type="date" id="date" name="date" required><br><br>
+    
+    <button type="submit">Search</button>
+</form>
+
+{% if flights %}
+    <table>
+        <thead>
+            <tr>
+                <th>Airline</th>
+                <th>Flight Number</th>
+                <th>Departure Time</th>
+                <th>Arrival Time</th>
+                <th>Price</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for flight in flights %}
+                <tr>
+                    <td>{{ flight[0] }}</td> <!-- airline_name -->
+                    <td>{{ flight[1] }}</td> <!-- flight_num -->
+                    <td>{{ flight[3] }}</td> <!-- departure_time -->
+                    <td>{{ flight[4] }}</td> <!-- arrival_time -->
+                    <td>{{ flight[6] }}</td> <!-- price -->
+                    <td><a href="{{ url_for('purchase_ticket', airline_name=flight[0], flight_num=flight[1]) }}">Purchase</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No flights found for the selected criteria. Please try different search options.</p>
+{% endif %}
+
+<!-- Back to Customer Home button -->
+<div style="margin-top: 20px;">
+    <a href="{{ url_for('customer_home') }}" class="btn btn-primary">Back to Customer Home</a>
+</div>

@@ -5,7 +5,7 @@
     <title>Airline Staff Home</title>
 </head>
 <body>
-    <h1>Welcome, {{ username }}!</h1>
+    <h1>Welcome, {{ session['username'] }}!</h1>
 
     <!-- Display error messages if any -->
     {% with messages = get_flashed_messages() %}
@@ -20,11 +20,6 @@
 
     <h2>Staff Actions</h2>
     <ul>
-        <li><a href="{{ url_for('view_flights') }}">View All Flights</a></li>
-        <li><a href="{{ url_for('manage_flights') }}">Add/Update Flights</a></li>
-        <li><a href="{{ url_for('view_customers') }}">View Customer Information</a></li>
-        <li><a href="{{ url_for('view_sales_reports') }}">View Sales Reports</a></li>
-        <li><a href="{{ url_for('manage_permissions') }}">Manage Permissions</a></li>
         <li><a href="{{ url_for('logout') }}">Log Out</a></li>
     </ul>
 </body>

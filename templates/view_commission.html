@@ -1,0 +1,26 @@
+<h2>View My Commission</h2>
+
+<form method="POST" class="date-range-form">
+    <label for="start_date">Start Date:</label>
+    <input type="date" id="start_date" name="start_date" required>
+
+    <label for="end_date">End Date:</label>
+    <input type="date" id="end_date" name="end_date" required>
+    
+    <button type="submit" class="btn btn-primary">View Commission</button>
+</form>
+
+{% if commission_data %}
+    <h3>Commission Summary ({{ start_date }} to {{ end_date }})</h3>
+    <ul>
+        <li><strong>Total Commission:</strong> ${{ commission_data[0] or 0.00 }}</li>
+        <li><strong>Average Commission per Ticket:</strong> ${{ commission_data[1] or 0.00 }}</li>
+        <li><strong>Total Tickets Sold:</strong> {{ commission_data[2] or 0 }}</li>
+    </ul>
+{% else %}
+    <p>No commission data found for the selected period.</p>
+{% endif %}
+
+<div style="margin-top: 20px;">
+    <a href="{{ url_for('agent_home') }}" class="btn btn-primary">Back to Booking Agent Home</a>
+</div>

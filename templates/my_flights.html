@@ -1,0 +1,37 @@
+<h1>Your Upcoming Flights</h1>
+{% if flights %}
+    <table>
+        <thead>
+            <tr>
+                <th>Airline</th>
+                <th>Flight Number</th>
+                <th>Departure Airport</th>
+                <th>Departure Time</th>
+                <th>Arrival Airport</th>
+                <th>Arrival Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for flight in flights %}
+                <tr>
+                    <td>{{ flight[0] }}</td>
+                    <td>{{ flight[1] }}</td>
+                    <td>{{ flight[2] }}</td>
+                    <td>{{ flight[3]}}</td>
+                    <td>{{ flight[4]}}</td>
+                    <td>{{ flight[5] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>You don't have any upcoming flights.</p>
+{% endif %}
+
+<div style="margin-top: 20px;">
+    {% if session.get('user_type') == 'customer' %}
+        <a href="{{ url_for('customer_home') }}" class="btn btn-primary">Back to Customer Home</a>
+    {% elif session.get('user_type') == 'booking_agent' %}
+        <a href="{{ url_for('agent_home') }}" class="btn btn-primary">Back to Booking Agent Home</a>
+    {% endif %}
+</div>

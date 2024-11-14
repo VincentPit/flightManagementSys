@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Customers</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="mb-4">Top Customers</h2>
+
+        <!-- Section for Top Customers by Tickets Bought -->
+        <div class="mb-5">
+            <h3>Top Customers by Tickets Bought (Past 6 Months)</h3>
+            {% if top_customers_by_tickets %}
+                <ul class="list-group mb-3">
+                    {% for customer in top_customers_by_tickets %}
+                        <li class="list-group-item">
+                            <strong>{{ customer[0] }}</strong> - 
+                            Total Commission: {{ customer[1] | default(0) }}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <!-- Bar Chart for Tickets Bought -->
+                <canvas id="ticketsChart" width="400" height="200"></canvas>
+            {% else %}
+                <p>No data available for tickets bought in the past 6 months.</p>
+            {% endif %}
+        </div>
+
+        <!-- Section for Top Customers by Commission Received -->
+        <div>
+            <h3>Top Customers by Commission Received (Past Year)</h3>
+            {% if top_customers_by_commission %}
+                <ul class="list-group mb-3">
+                    {% for customer in top_customers_by_commission %}
+                        <li class="list-group-item">
+                            <strong>{{ customer[0] }}</strong> - Total Commission: ${{ customer[1] | round(2) }}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <!-- Bar Chart for Commission Received -->
+                <canvas id="commissionChart" width="400" height="200"></canvas>
+            {% else %}
+                <p>No data available for commission received in the past year.</p>
+            {% endif %}
+        </div>
+    </div>
+    <div style="margin-top: 20px;">
+        <a href="{{ url_for('agent_home') }}" class="btn btn-primary">Back to Booking Agent Home</a>
+    </div>
+
+    <!-- Chart.js Script for Bar Charts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Data for Tickets Bought Chart
+            {% if top_customers_by_tickets %}
+            const ticketsData = {
+                labels: {{ top_customers_by_tickets | map(attribute='customer_email') | list }},
+                datasets: [{
+                    label: 'Tickets Bought',
+                    data: {{ top_customers_by_tickets | map(attribute='tickets_bought') | list }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            };
+
+            const ticketsConfig = {
+                type: 'bar',
+                data: ticketsData,
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Tickets Bought'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Customer Email'
+                            }
+                        }
+                    }
+                }
+            };
+
+            new Chart(document.getElementById('ticketsChart'), ticketsConfig);
+            {% endif %}
+
+            // Data for Commission Chart
+            {% if top_customers_by_commission %}
+            const commissionData = {
+                labels: {{ top_customers_by_commission | map(attribute='customer_email') | list }},
+                datasets: [{
+                    label: 'Total Commission ($)',
+                    data: {{ top_customers_by_commission | map(attribute='total_commission') | list }},
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            };
+
+            const commissionConfig = {
+                type: 'bar',
+                data: commissionData,
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Total Commission ($)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Customer Email'
+                            }
+                        }
+                    }
+                }
+            };
+
+            new Chart(document.getElementById('commissionChart'), commissionConfig);
+            {% endif %}
+        });
+    </script>
+
+    
+</body>
+</html>

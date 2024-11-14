@@ -1,0 +1,21 @@
+<h1>Track My Spending</h1>
+{% if spending_data %}
+    <table>
+        <thead>
+            <tr>
+                <th>Month</th>
+                <th>Total Spent</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in spending_data %}
+                <tr>
+                    <td>{{ data[1] }}</td>
+                    <td>{{ data[0] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No spending data found for the past year.</p>
+{% endif %}
