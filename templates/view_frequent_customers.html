@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frequent Customers</title>
+</head>
+<body>
+    <h1>Frequent Customers</h1>
+
+    <h2>Most Frequent Customer (Last Year)</h2>
+    {% if most_frequent_customer %}
+        <p>
+            Email: {{ most_frequent_customer['customer_email'] }}<br>
+            Flights Taken: {{ most_frequent_customer['flights_taken'] }}
+        </p>
+        <a href="{{ url_for('view_frequent_customers', customer_email=most_frequent_customer['customer_email']) }}">
+            View All Flights for This Customer
+        </a>
+    {% else %}
+        <p>No frequent customers found.</p>
+    {% endif %}
+
+    {% if customer_flights %}
+        <h2>Flights for {{ request.args.get('customer_email') }}</h2>
+        <table border="1">
+            <tr>
+                <th>Flight Number</th>
+                <th>Departure Time</th>
+                <th>Arrival Time</th>
+                <th>Departure Airport</th>
+                <th>Arrival Airport</th>
+            </tr>
+            {% for flight in customer_flights %}
+            <tr>
+                <td>{{ flight['flight_num'] }}</td>
+                <td>{{ flight['departure_time'] }}</td>
+                <td>{{ flight['arrival_time'] }}</td>
+                <td>{{ flight['departure_airport'] }}</td>
+                <td>{{ flight['arrival_airport'] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+
+    <div style="margin-top: 20px;">
+        <a href="{{ url_for('staff_home') }}" class="btn btn-primary">Back to Staff Home</a>
+    </div>
+    
+</body>
+</html>

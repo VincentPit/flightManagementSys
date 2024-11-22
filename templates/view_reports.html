@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Reports</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h2, h3 {
+            text-align: center;
+        }
+        canvas {
+            margin: 20px auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Reports</h2>
+<form method="POST" action="/view_reports">
+    <label for="start_date">Start Date:</label>
+    <input type="date" id="start_date" name="start_date">
+    
+    <label for="end_date">End Date:</label>
+    <input type="date" id="end_date" name="end_date">
+    
+    <button type="submit">View Reports</button>
+</form>
+
+<!-- Bar Chart for Tickets Sold -->
+<h3>Total Tickets Sold</h3>
+<canvas id="ticketsSoldChart"></canvas>
+
+<!-- Pie Chart for Revenue Comparison (Last Month) -->
+<h3>Revenue Comparison (Last Month)</h3>
+<canvas id="revenueLastMonth"></canvas>
+
+<!-- Pie Chart for Revenue Comparison (Last Year) -->
+<h3>Revenue Comparison (Last Year)</h3>
+<canvas id="revenueLastYear"></canvas>
+
+<div style="margin-top: 20px;">
+    <a href="{{ url_for('staff_home') }}" class="btn btn-primary">Back to Staff Home</a>
+</div>
+
+<script>
+    // Tickets Sold Data
+
+
+    const ticketsSoldData = {{ tickets_sold_data | tojson }};
+
+
+
+    const ticketsSoldLabels = ticketsSoldData.map(item => item.sale_date || item.month);
+    const ticketsSoldCounts = ticketsSoldData.map(item => item.tickets_sold);
+
+    new Chart(document.getElementById('ticketsSoldChart'), {
+        type: 'bar',
+        data: {
+            labels: ticketsSoldLabels,
+            datasets: [{
+                label: 'Tickets Sold',
+                data: ticketsSoldCounts,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: true },
+                tooltip: { enabled: true }
+            },
+            scales: {
+                x: { title: { display: true, text: 'Date/Month' } },
+                y: { title: { display: true, text: 'Tickets Sold' } }
+            }
+        }
+    });
+
+    // Last Month Revenue Data
+    const lastMonthData = {{ last_month_revenue | tojson }};
+    const lastMonthLabels = lastMonthData.map(item => item.sale_type);
+    const lastMonthRevenue = lastMonthData.map(item => item.revenue);
+
+    new Chart(document.getElementById('revenueLastMonth'), {
+        type: 'pie',
+        data: {
+            labels: lastMonthLabels,
+            datasets: [{
+                data: lastMonthRevenue,
+                backgroundColor: ['#36a2eb', '#ff6384'],
+                hoverBackgroundColor: ['#36a2eb', '#ff6384']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { enabled: true }
+            }
+        }
+    });
+
+    // Last Year Revenue Data
+    const lastYearData = {{ last_year_revenue | tojson }};
+    const lastYearLabels = lastYearData.map(item => item.sale_type);
+    const lastYearRevenue = lastYearData.map(item => item.revenue);
+
+    new Chart(document.getElementById('revenueLastYear'), {
+        type: 'pie',
+        data: {
+            labels: lastYearLabels,
+            datasets: [{
+                data: lastYearRevenue,
+                backgroundColor: ['#36a2eb', '#ff6384'],
+                hoverBackgroundColor: ['#36a2eb', '#ff6384']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { enabled: true }
+            }
+        }
+    });
+</script>
+
+
+
+</body>
+</html>

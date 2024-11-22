@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Flights - Airline Staff</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Your Upcoming Flights</h1>
+    {% if flights %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Airline</th>
+                    <th>Flight Number</th>
+                    <th>Departure Airport</th>
+                    <th>Departure Time</th>
+                    <th>Arrival Airport</th>
+                    <th>Arrival Time</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for flight in flights %}
+                    <tr>
+                        <td>{{ flight[0] }}</td>
+                        <td>{{ flight[1] }}</td>
+                        <td>{{ flight[2] }}</td>
+                        <td>{{ flight[3] }}</td>
+                        <td>{{ flight[4] }}</td>
+                        <td>{{ flight[5] }}</td>
+                        <td>${{ flight[6] }}</td>
+                        <td>{{ flight[7] }}</td>
+                        <td>
+                            
+                            <a href="{{ url_for('change_flight_status', flight_num=flight[1]) }}" class="btn btn-secondary">
+                                Change Status
+                            </a>
+                            
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You don't have any upcoming flights.</p>
+    {% endif %}
+
+    <div style="margin-top: 20px;">
+        <a href="{{ url_for('staff_home') }}" class="btn btn-primary">Back to Staff Home</a>
+    </div>
+</body>
+</html>

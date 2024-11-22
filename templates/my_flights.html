@@ -33,5 +33,7 @@
         <a href="{{ url_for('customer_home') }}" class="btn btn-primary">Back to Customer Home</a>
     {% elif session.get('user_type') == 'booking_agent' %}
         <a href="{{ url_for('agent_home') }}" class="btn btn-primary">Back to Booking Agent Home</a>
+    {% elif session.get('user_type') == 'airline_staff' %}
+        <a href="{{ url_for('staff_home') }}" class="btn btn-primary">Back to Airline Staff Home</a>
     {% endif %}
 </div>

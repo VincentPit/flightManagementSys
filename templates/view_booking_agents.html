@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Booking Agents</title>
+</head>
+<body>
+    <h1>Top Booking Agents</h1>
+
+    <h2>Top 5 Agents (Past Month)</h2>
+    <table border="1">
+        <tr>
+            <th>Agent Email</th>
+            <th>Tickets Sold</th>
+        </tr>
+        {% for agent in top_agents_month %}
+        <tr>
+            <td>{{ agent['booking_agent_email'] }}</td>
+            <td>{{ agent['tickets_sold'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Top 5 Agents (Past Year)</h2>
+    <table border="1">
+        <tr>
+            <th>Agent Email</th>
+            <th>Tickets Sold</th>
+        </tr>
+        {% for agent in top_agents_year %}
+        <tr>
+            <td>{{ agent['booking_agent_email'] }}</td>
+            <td>{{ agent['tickets_sold'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Top 5 Agents (By Commission)</h2>
+    <table border="1">
+        <tr>
+            <th>Agent ID</th>
+            <th>Total Commission</th>
+        </tr>
+        {% for agent in top_agents_commission %}
+        <tr>
+            <td>{{ agent['booking_agent_email'] }}</td>
+            <td>${{ agent['commission_earned'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <a href="{{ url_for('staff_home') }}">Back to Home</a>
+</body>
+</html>

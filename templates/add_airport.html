@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Airport</title>
+</head>
+<body>
+    <h1>Add a New Airport</h1>
+    <form method="POST" action="{{ url_for('add_airport') }}">
+        <label for="airport_name">Airport Name:</label>
+        <input type="text" id="airport_name" name="airport_name" required><br><br>
+
+        <label for="city">City:</label>
+        <input type="text" id="city" name="city" required><br><br>
+
+        <button type="submit">Add Airport</button>
+    </form>
+    <a href="{{ url_for('staff_home') }}">Back to Home</a>
+</body>
+</html>
